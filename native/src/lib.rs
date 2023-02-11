@@ -40,9 +40,5 @@ macro_rules! err {
 #[allow(dead_code)]
 #[napi]
 pub fn version() -> String {
-    use serde_json::{Map, Value};
-    let package_file = include_str!("../../package.json");
-    let package_contents: Map<String, Value> = serde_json::from_str(package_file).expect("Failed to read main package.json file");
-    let version = package_contents.get("version").expect("Couldn't find version in main package.json file");
-    return String::from(version.as_str().unwrap());
+    return env!("CARGO_PKG_VERSION").to_string();
 }

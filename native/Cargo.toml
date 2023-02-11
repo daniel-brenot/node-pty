@@ -10,15 +10,13 @@ path = "./src/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-lazy_static = "1.4.0"
 napi = { version = "2.2.0", features = ["async"]}
 napi-derive = "2.2.0"
-serde = "1.0.136"
-serde_json = "1.0.79"
 which = "4.2.5"
 mimalloc = { version = "0.1.28" }
 
 [target.'cfg(windows)'.dependencies]
+lazy_static = "1.4.0"
 winsafe = { version = "0.0.9", features = ["kernel"] }
 winpty-sys = "0.5.0"
 
