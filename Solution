@@ -1,0 +1,22 @@
+To troubleshoot socket connections to ConPTY in the Rust-Port branch, you must first ensure that the named pipeline is properly installed and connected to child processes. Here's how to fix the problem:
+
+Named Pipe Creation Verification: Look at the code that handles the design of named pipes in native Rust implementations. Make sure the pipes have good security features and are safe for children to use.
+
+Creating a diagnostic procedure: when making a dent in a child's table Ensure that the standard input/output ring is correctly routed to the named pipe. This can be done using the function CreateProcess With the appropriate STARTUPINFO settings
+
+Error Handling: Use robust error handling to catch any failures. During pipeline connection This will help identify where the relationship has broken down.
+
+Look at the C code: since you said the main branch has the corresponding C code. Lets compare the Rust implementation with C code to compare the differences in pipeline and process management.
+
+Testing : After making changes. Run the provided commands (tree build:native, tree build, tree test) to see if the changes fix the failed tests.
+
+Here's a simple example. Here's how to set up a pipeline in Rust:
+
+use std::os::windows::io::{AsRawHandle, FromRawHandle};
+use std::process::{Stdio command};
+
+let (child_stdin, child_stdout) = open_name_pipes()?;
+Let mut child = Command::new("your_child_pattern") .
+    .stdin(Stdio::from_raw_handle(child_stdin.as_raw_handle())) .
+    .stdout(Stdio::from_raw_handle(child_stdout.as_raw_handle())) .
+    .spawn()?;
