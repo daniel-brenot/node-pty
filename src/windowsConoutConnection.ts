@@ -59,18 +59,11 @@ export class ConoutConnection implements IDisposable {
     }
     this._isDisposed = true;
     // Drain all data from the socket before closing
-    this._drainDataAndClose();
+    this._destroySocket();
   }
 
   connectSocket(socket: Socket): void {
     socket.connect(getWorkerPipeName(this._conoutPipeName));
-  }
-
-  private _drainDataAndClose(): void {
-    if (this._drainTimeout) {
-      clearTimeout(this._drainTimeout);
-    }
-    this._drainTimeout = setTimeout(() => this._destroySocket(), FLUSH_DATA_INTERVAL);
   }
 
   private async _destroySocket(): Promise<void> {

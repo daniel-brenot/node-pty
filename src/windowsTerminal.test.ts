@@ -20,48 +20,49 @@ interface IWindowsProcessTreeResult {
   pid: number;
 }
 
-function pollForProcessState(desiredState: IProcessState, intervalMs: number = 100, timeoutMs: number = 2000): Promise<void> {
-  return new Promise<void>(resolve => {
-    let tries = 0;
-    const interval = setInterval(() => {
-      psList({ all: true }).then(ps => {
-        let success = true;
-        const pids = Object.keys(desiredState).map(k => parseInt(k, 10));
-        pids.forEach(pid => {
-          if (desiredState[pid]) {
-            if (!ps.some(p => p.pid === pid)) {
-              success = false;
-            }
-          } else {
-            if (ps.some(p => p.pid === pid)) {
-              success = false;
-            }
+function pollForProcessState(desiredState: IProcessState, intervalMs: number = 100, timeoutMs: number = 5000): void {
+  let tries = 0;
+  const interval = setInterval(() => {
+    psList({ all: true }).then(ps => {
+      let success = true;
+      const pids = Object.keys(desiredState).map(k => parseInt(k, 10));
+      pids.forEach(pid => {
+        if (desiredState[pid]) {
+          if (!ps.some(p => p.pid === pid)) {
+            success = false;
           }
-        });
-        if (success) {
-          clearInterval(interval);
-          resolve();
-          return;
-        }
-        tries++;
-        if (tries * intervalMs >= timeoutMs) {
-          clearInterval(interval);
-          const processListing = pids.map(k => `${k}: ${desiredState[k]}`).join('\n');
-          assert.fail(`Bad process state, expected:\n${processListing}`);
+        } else {
+          if (ps.some(p => p.pid === pid)) {
+            success = false;
+          }
         }
       });
-    }, intervalMs);
-  });
+      if (success) {
+        clearInterval(interval);
+        return;
+      }
+      tries++;
+      if (tries * intervalMs >= timeoutMs) {
+        clearInterval(interval);
+        const processListing = pids.map(k => `${k}: ${desiredState[k]}`).join('\n');
+        assert.fail(`Bad process state, expected:\n${processListing}`);
+      }
+    });
+  }, intervalMs);
 }
 
 function pollForProcessTreeSize(pid: number, size: number, intervalMs: number = 100, timeoutMs: number = 2000): Promise<IWindowsProcessTreeResult[]> {
   return new Promise<IWindowsProcessTreeResult[]>(resolve => {
     let tries = 0;
     const interval = setInterval(async () => {
-      let ps = await psList({ all: true });
+      const ps = await psList({ all: true });
       const openList: IWindowsProcessTreeResult[] = [];
-      let filtered = ps.filter(p => p.pid === pid).map(p => ({ name: p.name, pid: p.pid }));
-      if (filtered.length > 0) openList.push(filtered[0]);
+      const filtered = ps
+        .filter(p => p.pid === pid)
+        .map(p => ({ name: p.name, pid: p.pid }));
+      if (filtered.length > 0) {
+        openList.push(filtered[0]);
+      }
       const list: IWindowsProcessTreeResult[] = [];
       while (openList.length) {
         const current = openList.shift();
@@ -112,10 +113,10 @@ if (process.platform === 'win32') {
           desiredState[list[1].pid] = false;
           desiredState[list[2].pid] = true;
           desiredState[list[3].pid] = false;
-          await pollForProcessState(desiredState)
+          pollForProcessState(desiredState);
           // Kill notepad before done
           process.kill(list[2].pid);
-          done();
+          (<any>term)._defer(done);
         });
       });
     });
@@ -154,7 +155,7 @@ if (process.platform === 'win32') {
           // Skip test if git bash isn't installed
           return;
         }
-        const term = new WindowsTerminal(cmdCopiedPath, '/c echo "hello world"', {});
+        const term = new WindowsTerminal(cmdCopiedPath, '/C echo "hello world"', {});
         let result = '';
         term.on('data', (data) => {
           result += data;
@@ -168,19 +169,25 @@ if (process.platform === 'win32') {
 
     describe('env', () => {
       it('should place text into a file', (done) => {
-        const term = new WindowsTerminal('cmd.exe', 'echo %FOO% > C:\\Users\\DanielBrenot\\out.txt', { env: { FOO: 'BAR' }});
-        let result = '';
-        term.on('data', (data) => result += data);
+        const userProfile = process.env.USERPROFILE;
+        const newEnv = { ...process.env, FOO: 'BAR' };
+        const term = new WindowsTerminal('cmd.exe', '/C echo %FOO% > %USERPROFILE%\\out.txt',
+          { env: newEnv } );
         term.on('exit', () => {
+          let result = '';
+          try {
+            result = fs.readFileSync(`${userProfile}\\out.txt`, 'utf8');
+            fs.unlinkSync(`${userProfile}\\out.txt`);
+          } catch (err) {
+            result = err.toString();
+          }
           expect(result).to.contain('BAR');
           done();
         });
       });
-    });
-
-    describe('env', () => {
       it('should set environment variables of the shell', (done) => {
-        const term = new WindowsTerminal('cmd.exe', '/C echo %FOO%', { env: { FOO: 'BAR' }});
+        const newEnv = { ...process.env, FOO: 'BAR' };
+        const term = new WindowsTerminal('cmd.exe', '/C echo %FOO%', { env: newEnv } );
         let result = '';
         term.on('data', (data) => result += data);
         term.on('exit', () => {

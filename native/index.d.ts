@@ -30,10 +30,33 @@ export interface IConptyProcess {
 }
 export interface IConptyConnection {
   pid: number
+  tid: number
 }
-export function conptyStartProcess(cols: number, rows: number, pipeName: string, conptyInheritCursor: boolean): IConptyProcess
+/**
+ * This function creates the pseudoconsole and the named pipes for input and output.
+ *
+ * Returns the created process information.
+ */
+export function conptyCreateProcess(cols: number, rows: number, pipeName: string, conptyInheritCursor: boolean): IConptyProcess
+/**
+ * Start the suspended process previously created with conpty_create_process and contpy_connect.
+ *
+ * Returns the result of the operation.
+ */
+export function conptyStartProcess(process: number): any
+/**
+ * Executes the creation of the shell in the pseudoconsole create previously with conpty_create_process.
+ * The process is created in a suspended state to allow for the start of the worker sockets.
+ *
+ * The connection object containing the required values of process id and thread id.
+ */
 export function conptyConnect(ptyId: number, cmdline: string, cwd: string, env: Record<string, string>, onexit: (...args: any[]) => any): IConptyConnection
+/** This method executes the resize operation on a valid console handle. */
 export function conptyResize(ptyId: number, cols: number, rows: number): void
+/**
+ * This method executes the kill operation on a valid console handle.
+ * Closing the pseudoconsole and the input/output handles attached.
+ */
 export function conptyKill(ptyId: number): void
 export interface IWinptyProcess {
   pty: number

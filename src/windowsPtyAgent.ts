@@ -11,7 +11,7 @@ import { Socket } from 'net';
 import { ArgvOrCommandLine } from './types';
 import { fork } from 'child_process';
 import { ConoutConnection } from './windowsConoutConnection';
-import { conptyConnect, conptyKill, conptyResize, conptyStartProcess, getConsoleProcessList, IConptyProcess, IWinptyProcess, winptyGetExitCode, winptyKill, winptyResize, winptyStartProcess } from '../native';
+import { conptyConnect, conptyKill, conptyResize, conptyStartProcess, conptyCreateProcess, getConsoleProcessList, IConptyProcess, IWinptyProcess, winptyGetExitCode, winptyKill, winptyResize, winptyStartProcess } from '../native';
 
 /**
  * The amount of time to wait for additional data after the conpty shell process has exited before
@@ -42,6 +42,7 @@ export class WindowsPtyAgent {
   public get fd(): any { return this._fd; }
   public get innerPid(): number { return this._innerPid; }
   public get pty(): number { return this._pty; }
+  public get readyState(): string { return this._outSocket.readyState; }
 
   constructor(
     file: string,
@@ -66,8 +67,9 @@ export class WindowsPtyAgent {
 
     // Open pty session.
     let term: IConptyProcess | IWinptyProcess;
+    const pipes = this._generatePipeName();
     if (this._useConpty) {
-      term = conptyStartProcess(cols, rows, this._generatePipeName(), conptyInheritCursor);
+      term = conptyCreateProcess(cols, rows, pipes, conptyInheritCursor);
     } else {
       term = winptyStartProcess(file, commandLine, env, cwd, cols, rows, debug);
       this._pid = (term as IWinptyProcess).pid;
@@ -88,10 +90,9 @@ export class WindowsPtyAgent {
     // The conout socket must be ready out on another thread to avoid deadlocks
     this._conoutSocketWorker = new ConoutConnection(term.conout);
     this._conoutSocketWorker.onReady(() => {
-      this._conoutSocketWorker.connectSocket(this._outSocket);
-    });
-    this._outSocket.on('connect', () => {
       this._outSocket.emit('ready_datapipe');
+      this._conoutSocketWorker.connectSocket(this._outSocket);
+      this._startProcess();
     });
 
     const inSocketFD = fs.openSync(term.conin, 'w');
@@ -109,14 +110,14 @@ export class WindowsPtyAgent {
   }
 
   public resize(cols: number, rows: number): void {
-    if (this._useConpty) {
-      if (this._exitCode !== undefined) {
-        throw new Error('Cannot resize a pty that has already exited');
-      }
-      conptyResize(this._pty, cols, rows);
-      return;
+    if (this._exitCode !== undefined) {
+      throw new Error('Cannot resize a pty that has already exited');
     }
-    winptyResize(this._pid, cols, rows);
+    if (this._useConpty) {
+      conptyResize(this._pty, cols, rows);
+    } else {
+      winptyResize(this._pid, cols, rows);
+    }
   }
 
   public kill(): void {
@@ -170,10 +171,10 @@ export class WindowsPtyAgent {
   }
 
   public get exitCode(): number {
-    if (this._useConpty) {
-      return this._exitCode;
+    if (!this._useConpty) {
+      this._exitCode = winptyGetExitCode(this._innerPidHandle);
     }
-    return winptyGetExitCode(this._innerPidHandle);
+    return this._exitCode;
   }
 
   private _getWindowsBuildNumber(): number {
@@ -193,7 +194,11 @@ export class WindowsPtyAgent {
    * Triggered from the native side when a contpy process exits.
    */
   private _$onProcessExit(exitCode: number): void {
+    if ( this._outSocket.readyState !== 'open' ) {
+      return; // cannot close twice
+    }
     this._exitCode = exitCode;
+    this._outSocket.emit('close');
     this._flushDataAndCleanUp();
     this._outSocket.on('data', () => this._flushDataAndCleanUp());
   }
@@ -205,9 +210,21 @@ export class WindowsPtyAgent {
     this._closeTimeout = setTimeout(() => this._cleanUpProcess(), FLUSH_DATA_INTERVAL);
   }
 
+  /**
+   * To work correctly with the worker threads contpy needs to be connected before
+   * the process is actually launched or there will be a race condition that does not
+   * let the output pass through the pipes, winpty seems to not be affected.
+   */
+  private _startProcess(): void {
+    if ( this._useConpty ) {
+      conptyStartProcess(this._pty);
+    }
+  }
+
   private _cleanUpProcess(): void {
     this._inSocket.readable = false;
     this._outSocket.readable = false;
+    this._conoutSocketWorker.dispose();
     this._outSocket.destroy();
   }
 }
@@ -222,8 +239,7 @@ export function argsToCommandLine(file: string, args: ArgvOrCommandLine): string
     }
     return `${argsToCommandLine(file, [])} ${args}`;
   }
-  const argv = [file];
-  Array.prototype.push.apply(argv, args);
+  const argv = [file, ...args];
   let result = '';
   for (let argIndex = 0; argIndex < argv.length; argIndex++) {
     if (argIndex > 0) {
