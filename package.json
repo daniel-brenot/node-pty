@@ -15,6 +15,9 @@
     "type": "git",
     "url": "git://github.com/microsoft/node-pty.git"
   },
+  "mocha": {
+    "timeout": "2000"
+  },
   "files": [
     "lib/",
     "scripts/",
@@ -42,6 +45,7 @@
   "scripts": {
     "build": "tsc -b ./src/tsconfig.json",
     "build:native": "npm run build --prefix ./native",
+    "clean:native": "npm run clean --prefix ./native",
     "watch": "tsc -b -w ./src/tsconfig.json",
     "lint": "eslint -c .eslintrc.js --ext .ts src/",
     "install": "node ./scripts/build-if-needed.js || npm run build:native",
@@ -54,7 +58,7 @@
     "@napi-rs/cli": "^2.5.0",
     "@types/chai": "^4.3.4",
     "@types/mocha": "^7.0.2",
-    "@types/node": "12",
+    "@types/node": "^12.20.55",
     "@typescript-eslint/eslint-plugin": "^2.27.0",
     "@typescript-eslint/parser": "^2.27.0",
     "chai": "^4.3.7",

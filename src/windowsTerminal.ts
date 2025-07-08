@@ -46,7 +46,7 @@ export class WindowsTerminal extends Terminal {
     // Functions that need to run after `ready` event is emitted.
     this._deferreds = [];
 
-    // Create new termal.
+    // Create new terminal.
     this._agent = new WindowsPtyAgent(file, args, env, cwd, this._cols, this._rows, false, opt.useConpty, opt.conptyInheritCursor);
     this._socket = this._agent.outSocket;
 
@@ -58,13 +58,11 @@ export class WindowsTerminal extends Terminal {
     // The forked windows terminal is not available until `ready` event is
     // emitted.
     this._socket.on('ready_datapipe', () => {
-
       // These events needs to be forwarded.
       ['connect', 'data', 'end', 'timeout', 'drain'].forEach(event => {
         this._socket.on(event, () => {
-
-          // Wait until the first data event is fired then we can run deferreds.
-          if (!this._isReady && event === 'data') {
+          // Wait until the connect event is fired then we can run deferreds.
+          if (!this._isReady && event === 'connect') {
 
             // Terminal is now ready and we can avoid having to defer method
             // calls.
@@ -76,12 +74,15 @@ export class WindowsTerminal extends Terminal {
               // updated any variable that need to be available in `this` before
               // the deferred is run has to be declared above this forEach
               // statement.
-              fn.run();
+              try {
+                fn.run();
+              } catch (e) {
+                console.error(e);
+              }
             });
 
             // Reset
             this._deferreds = [];
-
           }
         });
       });
@@ -123,6 +124,9 @@ export class WindowsTerminal extends Terminal {
   }
 
   protected _write(data: string): void {
+    if ( !this._writable ) {
+      return;
+    }
     this._defer(this._doWrite, data);
   }
 
@@ -143,8 +147,11 @@ export class WindowsTerminal extends Terminal {
    */
 
   public resize(cols: number, rows: number): void {
-    if (cols <= 0 || rows <= 0 || isNaN(cols) || isNaN(rows) || cols === Infinity || rows === Infinity) {
+    if (cols <= 0 || rows <= 0 || isNaN(cols) || isNaN(rows) || cols === Infinity || rows === Infinity ) {
       throw new Error('resizing must be done using positive cols and rows');
+    }
+    if ( this._agent.readyState !== 'open' ) {
+      throw new Error('resizing not possible on non open terminals');
     }
     this._defer(() => {
       this._agent.resize(cols, rows);

@@ -1,7 +1,8 @@
 {
   "name": "native",
   "scripts": {
-    "build": "npx -y -p @napi-rs/cli napi build --platform --release"
+    "build": "npx -y -p @napi-rs/cli napi build --platform --release",
+    "clean": "cargo clean"
   },
   "napi": {
     "name": "node-pty"
