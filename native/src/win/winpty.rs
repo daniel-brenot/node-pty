@@ -1,11 +1,10 @@
 #![deny(clippy::all)]
-/// Copyright (c) 2013-2015, Christopher Jeffrey, Peter Sunde (MIT License)
-/// Copyright (c) 2016, Daniel Imms (MIT License).
-/// Copyright (c) 2018, Microsoft Corporation (MIT License).
-/// Copyright (c) 2022, Daniel Brenot, Shachar Itzhaky (MIT License)
-/// 
-/// This file is responsible for starting processes
-/// with pseudo-terminal file descriptors.
+// Copyright (c) 2013-2015, Christopher Jeffrey, Peter Sunde (MIT License)
+// Copyright (c) 2016, Daniel Imms (MIT License).
+// Copyright (c) 2018, Microsoft Corporation (MIT License).
+// 
+// This file is responsible for starting processes
+// with pseudo-terminal file descriptors.
 
 use std::collections::HashMap;
 

@@ -1,3 +1,4 @@
+// Copyright (c) 2018, Microsoft Corporation (MIT License).
 #[cfg(target_family = "windows")]
 pub mod util;
 pub mod conpty;

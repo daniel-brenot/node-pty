@@ -1,9 +1,8 @@
 #![deny(clippy::all)]
-/// Copyright (c) 2019, Microsoft Corporation (MIT License).
-/// Copyright (c) 2022, Daniel Brenot (MIT License)
-///
-/// This file is responsible for getting process lists
-/// on the windows platform
+// Copyright (c) 2019, Microsoft Corporation (MIT License).
+//
+// This file is responsible for getting process lists
+// on the windows platform
 
 #[cfg(target_family = "windows")]
 use std::os::raw::{c_int, c_uint};

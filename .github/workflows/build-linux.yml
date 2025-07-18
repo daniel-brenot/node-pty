@@ -10,6 +10,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Setup rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
       
     - name: Set Node.js lts
       uses: actions/setup-node@v4
@@ -44,6 +47,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Setup rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
       
     - name: Set Node.js lts
       uses: actions/setup-node@v4

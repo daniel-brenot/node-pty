@@ -1,8 +1,8 @@
 #![deny(clippy::all)]
-/// Copyright (c) 2022, Daniel Brenot (MIT License)
-/// 
-/// Entrypoint for the library for exposing pseudo-terminal
-/// functionality for multiple platforms
+// Copyright (c) 2018, Microsoft Corporation (MIT License).
+// 
+// Entrypoint for the library for exposing pseudo-terminal
+// functionality for multiple platforms
 
 
 

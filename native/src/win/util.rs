@@ -1,8 +1,8 @@
 #![deny(clippy::all)]
-/// Copyright (c) 2022, Daniel Brenot (MIT License)
-/// 
-/// This file provides general functionality
-/// reused for windows PseudoTerminals
+// Copyright (c) 2018, Microsoft Corporation (MIT License).
+// 
+// This file provides general functionality
+// reused for windows PseudoTerminals
 
 use crate::err;
 use std::{convert::TryFrom, collections::HashMap};

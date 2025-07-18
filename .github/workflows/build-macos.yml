@@ -10,6 +10,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+    
+    - name: Setup rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
       
     - name: Set Node.js lts
       uses: actions/setup-node@v4
@@ -41,39 +44,42 @@ jobs:
         path: ${{ github.workspace }}/native/node-pty.macos-x86_64.node
         if-no-files-found: error
     
-    build-macos-arm64:
-      runs-on: macos-latest
+  build-macos-arm64:
+    runs-on: macos-latest
 
-      steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        
-      - name: Set Node.js lts
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
       
-      - name: Verify Node.js installation
-        run: node --version
-      
-      - name: Install yarn
-        run: npm install -g yarn
+    - name: Set Node.js lts
+      uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    
+    - name: Verify Node.js installation
+      run: node --version
+    
+    - name: Install yarn
+      run: npm install -g yarn
 
-      - name: Install dependencies
-        run: yarn install
-      
-      - name: Build for platform
-        run: yarn build
+    - name: Install dependencies
+      run: yarn install
+    
+    - name: Build for platform
+      run: yarn build
 
-      - name: Test for platform
-        run: yarn test
+    - name: Test for platform
+      run: yarn test
 
-      - name: list files
-        run: ls -la
-      
-      - name: upload macos artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-build
-          path: ${{ github.workspace }}/native/node-pty.macos-arm64-gnu.node
-          if-no-files-found: error
+    - name: list files
+      run: ls -la
+    
+    - name: upload macos artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-build
+        path: ${{ github.workspace }}/native/node-pty.macos-arm64-gnu.node
+        if-no-files-found: error
