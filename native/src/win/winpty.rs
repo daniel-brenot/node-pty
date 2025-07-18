@@ -44,7 +44,7 @@ pub struct IWinptyProcess {
 
 #[allow(dead_code, unused_variables)]
 #[napi]
-unsafe fn winpty_start_process(mut file: String, command_line: String, env: HashMap<String, String>, cwd: String, cols: i32, rows: i32, debug: bool) -> napi::Result<IWinptyProcess> {
+unsafe fn winpty_start_process(file: String, command_line: String, env: HashMap<String, String>, cwd: String, cols: i32, rows: i32, debug: bool) -> napi::Result<IWinptyProcess> {
     #[cfg(not(target_family = "windows"))]
     return err!("Unsupported architecture");
     #[cfg(target_family = "windows")] {

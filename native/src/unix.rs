@@ -6,10 +6,10 @@
 /// This file is responsible for starting processes
 /// with pseudo-terminal file descriptors.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 
-use napi::JsFunction;
+use napi::{bindgen_prelude::{FnArgs, Function}, threadsafe_function::{ThreadsafeFunction, UnknownReturnValue}};
 use crate::err;
 
 
@@ -27,7 +27,7 @@ use crate::err;
   nix::errno::Errno,
   nix::unistd::chdir,
   napi::{Result},
-  napi::threadsafe_function::{ThreadSafeCallContext, ThreadsafeFunctionCallMode, ErrorStrategy}
+  napi::threadsafe_function::ThreadsafeFunctionCallMode
 };
 
 
@@ -54,7 +54,7 @@ fn pty_fork(
   env: HashMap<String, String>, cwd: String,
   cols: i32, rows: i32,
   uid: i32, gid: i32,
-  utf8: bool, onexit: JsFunction) -> napi::Result<IUnixProcess> {
+  utf8: bool, onexit: Function<FnArgs<(u32, u32)>, ()>) -> napi::Result<IUnixProcess> {
   #[cfg(target_family = "windows")]
   return err!("Unsupported architecture");
   #[cfg(not(target_family = "windows"))] {
@@ -169,20 +169,18 @@ fn pty_fork(
         }
       },
       _ => {
+
         unsafe { pty_nonblock(master)?; }
 
-        let tsfn = onexit.create_threadsafe_function::<_, _, _, ErrorStrategy::Fatal>(0,
-          |ctx: ThreadSafeCallContext<(u32,u32)>| {
-            // convert tuple to vec of size 2. @todo better way via serde?
-            ctx.env.create_uint32(ctx.value.0).and_then(|v0| {
-              ctx.env.create_uint32(ctx.value.1).map(|v1| { vec![v0, v1] })
-            })
-          })?;
+        let tsfn= onexit
+          .build_threadsafe_function()
+          .build()?;
+
 
         std::thread::spawn(move || {
           let rc = unsafe { pty_waitpid(pid) };
           //std::thread::sleep(std::time::Duration::from_millis(1000));
-          tsfn.call(rc, ThreadsafeFunctionCallMode::Blocking);
+          tsfn.call(FnArgs::from(rc), ThreadsafeFunctionCallMode::Blocking);
         });
       }
     };

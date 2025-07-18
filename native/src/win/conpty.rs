@@ -7,9 +7,10 @@
 // with pseudo-terminal file descriptors.
 
 
+use napi::bindgen_prelude::{FnArgs, Function};
+
 use crate::err;
 use std::collections::HashMap;
-use napi::JsFunction;
 #[cfg(target_family = "windows")] use {
   std::ptr::null_mut,
   std::sync::{Arc, Mutex, atomic::AtomicUsize},
@@ -172,7 +173,7 @@ pub unsafe fn pty_connect(
   cmdline: String,
   cwd: String,
   env: HashMap<String, String>,
-  onexit: JsFunction
+  onexit: Function<FnArgs<(u32, u32)>, ()>
 ) -> napi::Result<PROCESS_INFORMATION> {
   // Convert all 3 values to wstrings
 
@@ -397,7 +398,7 @@ pub unsafe fn conpty_start_process(
 #[allow(unused_variables)]
 #[allow(dead_code)]
 #[napi]
-fn conpty_connect(pty_id: i32, cmdline: String, cwd: String, env: HashMap<String, String>, onexit: JsFunction) -> napi::Result<IConptyConnection> {
+fn conpty_connect(pty_id: i32, cmdline: String, cwd: String, env: HashMap<String, String>, onexit: Function<FnArgs<(u32, u32)>, ()>) -> napi::Result<IConptyConnection> {
   #[cfg(not(target_family = "windows"))]
   return err!("Platform not supported");
   #[cfg(target_family = "windows")] {

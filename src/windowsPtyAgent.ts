@@ -104,7 +104,7 @@ export class WindowsPtyAgent {
     this._inSocket.setEncoding('utf8');
 
     if (this._useConpty) {
-      const connect = conptyConnect(this._pty, commandLine, cwd, env, c => this._$onProcessExit(c));
+      const connect = conptyConnect(this._pty, commandLine, cwd, env, (c) => this._$onProcessExit(c));
       this._innerPid = connect.pid;
     }
   }
