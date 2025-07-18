@@ -11,7 +11,6 @@
 use crate::err;
 use std::collections::HashMap;
 use napi::JsFunction;
-use windows::Win32::System::Threading::{ResumeThread, CREATE_SUSPENDED};
 #[cfg(target_family = "windows")] use {
   std::ptr::null_mut,
   std::sync::{Arc, Mutex, atomic::AtomicUsize},
@@ -41,7 +40,9 @@ use windows::Win32::System::Threading::{ResumeThread, CREATE_SUSPENDED};
           CreateProcessW,
           EXTENDED_STARTUPINFO_PRESENT,
           CREATE_UNICODE_ENVIRONMENT,
-          GetExitCodeProcess
+          GetExitCodeProcess,
+          ResumeThread,
+          CREATE_SUSPENDED
         },
         WindowsProgramming::INFINITE,
         Console::{

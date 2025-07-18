@@ -12,6 +12,8 @@ use std::collections::HashMap;
 use napi::JsFunction;
 use crate::err;
 
+
+
 #[cfg(not(target_family = "windows"))] use {
   std::ffi::{CStr, CString},
   std::ptr::{null, null_mut},
@@ -360,7 +362,7 @@ fn mk_sigaction() -> sigaction {
 
 #[cfg(target_os = "linux")]
 fn pty_getproc(fd: c_int) -> Option<String> {
-    use std::fs::read_to_string;
+  use std::fs::read_to_string;
 
   
   let pgrp = unsafe { tcgetpgrp(fd) };
@@ -376,25 +378,19 @@ fn pty_getproc(fd: c_int) -> Option<String> {
 
 #[cfg(target_os = "macos")]
 fn pty_getproc(fd: c_int) -> Option<String> {
-  use nix::libc::{CTL_KERN, KERN_PROC, KERN_PROC_PID};
-  let mib = [ CTL_KERN, KERN_PROC, KERN_PROC_PID, 0 ];
-  let size;
-  let kp;
+  let mut pname = [0u8; MAXCOMLEN + 1];
 
-  // if ((mib[3] = tcgetpgrp(fd)) == -1) {
-  //   return NULL;
-  // }
+    let ret = unsafe {
+        nix::libc::proc_name(fd as c_int, pname.as_mut_ptr() as _, pname.len() as u32)
+    };
 
-  // size = sizeof kp;
-  // if (sysctl(mib, 4, &kp, &size, NULL, 0) == -1) {
-  //   return NULL;
-  // }
+    if ret == 0 {
+        return None;
+    }
 
-  // if (size != (sizeof kp) || *kp.kp_proc.p_comm == '\0') {
-  //   return NULL;
-  // }
-
-  // return strdup(kp.kp_proc.p_comm);
+    // Convert C string to Rust String
+    let cstr = unsafe { CStr::from_ptr(pname.as_ptr() as *const i8) };
+    cstr.to_str().ok().map(|s| s.to_string())
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
