@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-macos-x86_64:
-    runs-on: macos-14
+    runs-on: macos-14-large
 
     steps:
     - name: Checkout repository
@@ -43,7 +43,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: macos-build
-        path: ${{ github.workspace }}/native/node-pty.macos-x86_64.node
+        path: ${{ github.workspace }}/native/node-pty.darwin-x86_64.node
         if-no-files-found: error
     
   build-macos-arm64:
@@ -85,5 +85,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: macos-build
-        path: ${{ github.workspace }}/native/node-pty.macos-arm64-gnu.node
+        path: ${{ github.workspace }}/native/node-pty.darwin-arm64.node
         if-no-files-found: error

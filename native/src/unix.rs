@@ -163,7 +163,7 @@ fn pty_fork(
               .collect::<Vec<_>>();
           let envv = nul_terminated(&cenv);
 
-          pty_execvpe(CString::new(file)?.as_ptr(), argv.as_ptr(), envv.as_ptr());
+          pty_execvpe(CString::new(file)?.as_ptr() as _, argv.as_ptr(), envv.as_ptr());
 
           child_panic("execvp(3) failed");
         }
@@ -209,8 +209,8 @@ fn pty_open(cols: u32, rows: u32) -> napi::Result<IUnixOpenProcess> {
       openpty(
         &mut amaster,
         &mut aslave,
-        null::<i8>() as _,
-        null::<i8>() as *mut termios,
+        null_mut::<c_char>(),
+        null_mut::<termios>(),
         &mut winp);
     }
 
@@ -298,9 +298,9 @@ unsafe fn pty_ptsname(master: c_int) -> nix::Result<String> {
 /// execvpe(3) is not portable.
 /// http://www.gnu.org/software/gnulib/manual/html_node/execvpe.html
 #[cfg(not(target_family = "windows"))]
-unsafe fn pty_execvpe(file: *const i8, argv: *const *const i8, envp: *const *const i8) -> i32 {
+unsafe fn pty_execvpe(file: *const c_char, argv: *const *const c_char, envp: *const *const c_char) -> i32 {
   // this is the hackiest, but that's what used to be in the C++ implementation
-  extern "C" { static mut environ: *const *const i8; }
+  extern "C" { static mut environ: *const *const c_char; }
   environ = envp;
   // suggestion: pass envp as Vec<String> and use
   //   nix::env::clearenv();
@@ -391,7 +391,7 @@ fn pty_getproc(fd: c_int) -> Option<String> {
     }
 
     // Convert C string to Rust String
-    let cstr = unsafe { CStr::from_ptr(pname.as_ptr() as *const i8) };
+    let cstr = unsafe { CStr::from_ptr(pname.as_ptr() as *const c_char) };
     cstr.to_str().ok().map(|s| s.to_string())
 }
 
