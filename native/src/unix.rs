@@ -6,10 +6,10 @@
 /// This file is responsible for starting processes
 /// with pseudo-terminal file descriptors.
 
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 
-use napi::{bindgen_prelude::{FnArgs, Function}, threadsafe_function::{ThreadsafeFunction, UnknownReturnValue}};
+use napi::bindgen_prelude::{FnArgs, Function};
 use crate::err;
 
 
@@ -206,7 +206,11 @@ fn pty_open(cols: u32, rows: u32) -> napi::Result<IUnixOpenProcess> {
     let mut amaster: i32 = 0;
     let mut aslave: i32 = 0;
     unsafe {
-      openpty(&mut amaster, &mut aslave, null::<i8>() as *mut i8, null::<i8>() as *mut termios,
+      openpty(
+        &mut amaster,
+        &mut aslave,
+        null::<i8>() as _,
+        null::<i8>() as *mut termios,
         &mut winp);
     }
 
